@@ -1,3 +1,18 @@
 {
-    "VERSION": "1"
+    "VERSION": "1",
+    "supported_keyboards" : [
+        "en-US",
+        "en-GB",
+        "fr-FR",
+        "de-DE",
+        "es-ES",
+        "fr-CA"
+    ],
+    "api_endpoints": {
+        "type": "/api/type",
+        "type_keycodes": "/api/keycodes",
+        "mouse_input": "/api/mouse",
+        "disable_boot_keyboard": "/api/disable_boot_kbd",
+        "hard_reset": "/api/hard_reset"
+    }
 }
