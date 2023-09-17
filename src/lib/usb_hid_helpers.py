@@ -41,8 +41,10 @@ def validate_dict(input_data: dict, required_keys: dict, optional_keys: dict = N
 def _press_keys(_keyboard, _keys, wait):
     """Calls the USB HID keyboard press method to input a list of keycodes."""
     added_prefix_keys = [getattr(Keycode, _key.upper()) for _key in _keys]
-    _keyboard.press(*added_prefix_keys)
-    _keyboard.release_all()
+    try:
+        _keyboard.press(*added_prefix_keys)
+    finally:
+        _keyboard.release_all()
     if wait:
         time.sleep(wait)
 
@@ -73,6 +75,11 @@ def type_chars(request, input_data: dict):
       else:
           layout.write(input_data["data"])
     except Exception as exc:
+        try:
+            # Try to release all keys, just in case. Little hideous, but safety first.
+            layout.release_all()
+        except:
+            pass
         return JSONResponse(request, {"error": repr(exc)}, status=BAD_REQUEST_400)
 
 
@@ -89,7 +96,7 @@ def type_keycodes(_, input_data: dict):
         _press_keys(kbd, input_data["data"], wait)
 
 
-def json_resp(request, _callable, validator_kwargs) -> JSONResponse:
+def json_resp(request, _callable, validator_kwargs: dict) -> JSONResponse:
     """
     A wrapper that handles json input validation and returns a JSONResponse object.
     """
@@ -102,6 +109,18 @@ def json_resp(request, _callable, validator_kwargs) -> JSONResponse:
         if bad_input_data:
             return JSONResponse(request, {"error": bad_input_data}, status=BAD_REQUEST_400)
         res = _callable(request, request_json)
+        if isinstance(res, JSONResponse):
+            return res
+        return JSONResponse(request, {"error": "OK"})
+    except Exception as exc:
+        return JSONResponse(request, {"error": repr(exc)}, status=INTERNAL_SERVER_ERROR_500)
+
+
+def json_resp_get(request, _callable) -> JSONResponse:
+    """A wrapper that will always a return a JSONResponse object, but handles no input data."""
+    try:
+        # a little copy/pasta here. NOTE: can we do less bad?
+        res = _callable()
         if isinstance(res, JSONResponse):
             return res
         return JSONResponse(request, {"error": "OK"})
