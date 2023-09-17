@@ -69,11 +69,11 @@ def type_into_device(request: Request) -> JSONResponse:
     Single key combo:
         {"data": ["CONTROL", "SHIFT", "ESCAPE"]}
     Multiple key combos:
-        {"data": [["SHIFT", "KEYPAD_SEVEN"], ["CONTROL", "SHIFT", "ESCAPE"]]}
+        {"data": [["SHIFT", "A"], ["CONTROL", "SHIFT", "ESCAPE"]]}
     Mixture of key combos and single key codes:
-        {"data": ["F5", ["SHIFT", "KEYPAD_SEVEN"], ["CONTROL", "SHIFT", "ESCAPE"]]}
+        {"data": ["F5", ["SHIFT", "T"], ["CONTROL", "SHIFT", "ESCAPE"]]}
     Single key codes in flat list:
-        {"data": ["KEYPAD_SEVEN", "C", "ESCAPE"], "separate": True}
+        {"data": ["KEYPAD_FIVE", "C", "ESCAPE"], "separate": True}
     """
     return json_resp(
         request,
@@ -84,7 +84,7 @@ def type_into_device(request: Request) -> JSONResponse:
 
 @server.route(API_ENDPOINTS["disable_boot_keyboard"], GET)
 def disable_boot_keyboard(request: Request):
-    """This will re-enable serial, USB storage and MIDI and prevent the device from being visible as a boot keyboard"""
+    """This will re-enable serial, USB storage and MIDI and prevent the device from running as a boot keyboard"""
     return json_resp_get(request, _disable_boot_keyboard)  # TODO: TEST ME
 
 

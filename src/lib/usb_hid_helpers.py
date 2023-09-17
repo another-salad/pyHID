@@ -67,7 +67,7 @@ def type_chars(request, input_data: dict):
     layout = Keyboard(kbd)
     wait = input_data.get("wait", None)
     try:
-      if wait:  # We have specified a wait per key press
+      if wait:
           wait = float(wait)
           for chr in input_data["data"]:
               layout.write(chr)
