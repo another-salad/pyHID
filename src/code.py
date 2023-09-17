@@ -13,30 +13,26 @@
 import time
 
 from adafruit_httpserver import Server, Request, JSONResponse, GET, POST
+from adafruit_httpserver.status import BAD_REQUEST_400, INTERNAL_SERVER_ERROR_500
 import adafruit_wiznet5k.adafruit_wiznet5k_socket as socket  # move to circuit-python-utils?
 
 # USB HID KEYBOARD
 import usb_hid
 from adafruit_hid.keyboard import Keyboard, Keycode
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-# CUSTOM KEYBOARDS
-from keyboard_layout_win_uk import KeyboardLayout as KeyboardLayoutUK
-from keyboard_layout_win_ca import KeyboardLayout as KeyboardLayoutCA
-from keyboard_layout_win_es import KeyboardLayout as KeyboardLayoutES
-from keyboard_layout_win_fr import KeyboardLayout as KeyboardLayoutFR
-from keyboard_layout_win_de import KeyboardLayout as KeyboardLayoutDE
+# Keyboard Layouts
+from supported_keyboards import SUPPORTED_KEYBOARDS
+
 # USB HID MOUSE
 from adafruit_hid.mouse import Mouse
 
 # circuit-python-utils
 from wiznet5keth import NetworkConfig, config_eth
 from config_utils import get_config_from_json_file
-from wsgi_web_app_helpers import bad_request, internal_server_error
 
 
 # config files
 ETH_CONFIG = config_eth(NetworkConfig(**get_config_from_json_file("config/net_config.json")))
-PYHID_CONFIG = config_eth(NetworkConfig(**get_config_from_json_file("config/pyhid_config.json")))
+PYHID_CONFIG = get_config_from_json_file("config/pyhid_config.json")
 API_ENDPOINTS = PYHID_CONFIG["api_endpoints"]
 
 socket.set_interface(ETH_CONFIG)  # move to circuit-python-utils?
@@ -65,20 +61,19 @@ def validate_dict(input_data: dict, required_keys: dict, optional_keys: dict = N
     return bad_input_data
 
 
-def _type_chars(input_data: dict):
-    supported_keyboards = PYHID_CONFIG["supported_keyboards"]
-    bad_input_data = validate_dict(input_data, {"data": str, "layout": str, "wait": (int, float)})
-    if bad_input_data:
-        return bad_request(bad_input_data)
+def _type_chars(request, input_data: dict):
     requested_layout = input_data.get("layout", None)
+    all_supported_kbds = tuple(SUPPORTED_KEYBOARDS.keys())
     if requested_layout is None:
-        Keyboard = supported_keyboards["en-US"]
-    elif requested_layout not in supported_keyboards.keys():
-        return bad_request(
-            f"Unsupported keyboard layout: {requested_layout}. Available layouts: {tuple(supported_keyboards.keys())}"
-          )
+        Keyboard = SUPPORTED_KEYBOARDS["en-US"]
+    elif requested_layout not in all_supported_kbds:
+        return JSONResponse(
+            request,
+            {"error": f"Unsupported keyboard layout: {requested_layout}. Available layouts: {all_supported_kbds}"},
+            status=BAD_REQUEST_400
+        )
     else:
-        Keyboard = supported_keyboards[requested_layout]
+        Keyboard = SUPPORTED_KEYBOARDS[requested_layout]
 
     layout = Keyboard(kbd)
     wait = input_data.get("wait", None)
@@ -91,19 +86,62 @@ def _type_chars(input_data: dict):
       else:
           layout.write(input_data["data"])
     except Exception as exc:
-      return bad_request(repr(exc))
+        return JSONResponse(request, {"error": repr(exc)}, status=BAD_REQUEST_400)
 
-    # TODO:
-    # - compatible status codes (Adafruit CircuitPython HTTP Server), bad_request will fail.
-    # - Handle 200 status return values (good_request?)
+
+def _press_keys(_keyboard, _keys, wait):
+    added_prefix_keys = [getattr(Keycode, _key.upper()) for _key in _keys]
+    _keyboard.press(*added_prefix_keys)
+    _keyboard.release_all()
+    if wait:
+        time.sleep(wait)
+
+
+def _type_keycodes(_, input_data: dict):
+    wait = input_data.get("wait", None)
+    # Review, might need better error handling for invalid keycodes
+    if any(isinstance(x, list) for x in input_data["data"]) or input_data.get("separate", False):
+        for keycodes in input_data["data"]:
+            _press_keys(kbd, [keycodes] if isinstance(keycodes, str) else keycodes, wait)
+    else:
+        _press_keys(kbd, input_data["keycodes"], wait)
+
+
+def _json_resp(request, _callable, validator_kwargs) -> JSONResponse:
+    try:
+        request_json = request.json()
+    except:
+        return JSONResponse(request, {"error": "Invalid json data."}, status=BAD_REQUEST_400)
+    try:
+        bad_input_data = validate_dict(request_json, **validator_kwargs)
+        if bad_input_data:
+            return JSONResponse(request, {"error": bad_input_data}, status=BAD_REQUEST_400)
+        print(request_json)
+        res = _callable(request, request_json)
+        if isinstance(res, JSONResponse):
+            return res
+        return JSONResponse(request, {"error": "OK"})
+    except Exception as exc:
+        return JSONResponse(request, {"error": repr(exc)}, status=INTERNAL_SERVER_ERROR_500)
+
 
 @server.route(API_ENDPOINTS["type"], POST)
-def type_into_device(request: Request):
+def type_into_device(request: Request) -> JSONResponse:
     """Type into the device"""
-    request_json = request.json()
-    if not request_json:
-        return bad_request("No json data found in request.")
-    _type_chars(request_json)
-    return JSONResponse(request, "Hello from the CircuitPython HTTP Server!")
+    print(request)
+    return _json_resp(
+        request,
+        _type_chars,
+        {"required_keys": {"data": str}, "optional_keys": {"layout": str, "wait": (int, float)}}
+    )
+
+@server.route(API_ENDPOINTS["type_keycodes"], POST)
+def type_into_device(request: Request) -> JSONResponse:
+    """Type keycodes into the device"""
+    return _json_resp(
+        request,
+        _type_keycodes,
+        {"required_keys": {"data": list}, "optional_keys": {"wait": (int, float), "separate": bool}}
+    )
 
 server.serve_forever(str(ETH_CONFIG.pretty_ip(ETH_CONFIG.ip_address)))
