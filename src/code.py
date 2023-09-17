@@ -10,26 +10,25 @@
       - All files from 'lib' directory
 """
 
-from adafruit_httpserver import Server, Request, JSONResponse, GET, POST
-import adafruit_wiznet5k.adafruit_wiznet5k_socket as socket  # move to circuit-python-utils?
+from adafruit_httpserver import Request, JSONResponse, GET, POST
 
 # Keyboard Layouts
 from supported_keyboards import SUPPORTED_KEYBOARDS
 
 # circuit-python-utils
-from wiznet5keth import NetworkConfig, config_eth
 from config_utils import get_config_from_json_file
 
 # usb_hid_helpers
 from usb_hid_helpers import type_chars, type_keycodes, json_resp
+# HTTP server
+from create_server import get_server_and_ip
 
 # config files
-ETH_CONFIG = config_eth(NetworkConfig(**get_config_from_json_file("config/net_config.json")))
 PYHID_CONFIG = get_config_from_json_file("config/pyhid_config.json")
 API_ENDPOINTS = PYHID_CONFIG["api_endpoints"]
 
-socket.set_interface(ETH_CONFIG)  # move to circuit-python-utils?
-server = Server(socket, "/static", debug=True)  # html files in static?
+# Configure server
+server, listening_ip = get_server_and_ip(PYHID_CONFIG["board"], config_file_path="config/net_config.json")
 
 
 @server.route(API_ENDPOINTS["type"], POST)
@@ -63,4 +62,4 @@ def type_into_device(request: Request) -> JSONResponse:
         {"required_keys": {"data": list}, "optional_keys": {"wait": (int, float), "separate": bool}}
     )
 
-server.serve_forever(str(ETH_CONFIG.pretty_ip(ETH_CONFIG.ip_address)))
+server.serve_forever(listening_ip)
