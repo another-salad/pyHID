@@ -104,7 +104,7 @@ def _type_keycodes(_, input_data: dict):
         for keycodes in input_data["data"]:
             _press_keys(kbd, [keycodes] if isinstance(keycodes, str) else keycodes, wait)
     else:
-        _press_keys(kbd, input_data["keycodes"], wait)
+        _press_keys(kbd, input_data["data"], wait)
 
 
 def _json_resp(request, _callable, validator_kwargs) -> JSONResponse:
@@ -137,7 +137,20 @@ def type_into_device(request: Request) -> JSONResponse:
 
 @server.route(API_ENDPOINTS["type_keycodes"], POST)
 def type_into_device(request: Request) -> JSONResponse:
-    """Type keycodes into the device"""
+    """
+    Types into the connected device via keycodes, maximum of six pressed at one time.
+    Layout is NOT required when interacting directly with keycodes.
+
+    A list of lists can be provided if you wish to enter a sequence of key combinations/keycodes.
+    Single key combo:
+        {"data": ["CONTROL", "SHIFT", "ESCAPE"]}
+    Multiple key combos:
+        {"data": [["SHIFT", "KEYPAD_SEVEN"], ["CONTROL", "SHIFT", "ESCAPE"]]}
+    Mixture of key combos and single key codes:
+        {"data": ["F5", ["SHIFT", "KEYPAD_SEVEN"], ["CONTROL", "SHIFT", "ESCAPE"]]}
+    Single key codes in flat list:
+        {"data": ["KEYPAD_SEVEN", "C", "ESCAPE"], "separate": True}
+    """
     return _json_resp(
         request,
         _type_keycodes,
