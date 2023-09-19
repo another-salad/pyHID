@@ -2,12 +2,9 @@
     requirements:
       - adafruit_http_server (submoduled in for Wiznet W5xxxx board support, README for more details)
       - adafruit_hid
-      - adafruit_wiznet5k (required by submodule circuit-python-utils)
       - adafuit_bus_device (required in by submodule circuit-python-utils)
-      - circuit-python-utils (submodule)
-          - wiznet5keth.py
-          - wsgi_web_app_helpers.py
-      - All files from 'lib' directory
+      - All files from 'lib' directory in this repo (wiznet5k_server.py can be dropped if more board support
+        ever arrives)
 """
 
 import os
@@ -17,7 +14,7 @@ import microcontroller
 from adafruit_httpserver import Request, JSONResponse, GET, POST
 
 # Keyboard Layouts
-from supported_keyboards import SUPPORTED_KEYBOARDS
+from supported_keyboards import SUPPORTED_KEYBOARDS  # Will be used in the near future
 
 # circuit-python-utils
 from config_utils import get_config_from_json_file
