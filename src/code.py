@@ -27,7 +27,7 @@ from usb_hid_helpers import type_chars, type_keycodes, json_resp, json_resp_get
 # HTTP server
 from create_server import get_server_and_ip
 
-from get_boot_kbd import get_boot_enable_path
+from get_boot_kbd import get_boot_enable_path, BOOT_KBD_DIR
 
 # config files
 PYHID_CONFIG = get_config_from_json_file("config/pyhid_config.json")
@@ -41,7 +41,7 @@ def _disable_boot_keyboard():
     """disabled boot keyboard mode, will need a hard reset for this to take effect"""
     boot_enable_path = get_boot_enable_path()
     if boot_enable_path:
-        os.rename(boot_enable_path, "boot_keyboard/disable")
+        os.rename(boot_enable_path, f"{BOOT_KBD_DIR}/disable")
 
 
 def _hard_reset():
@@ -85,7 +85,7 @@ def type_into_device(request: Request) -> JSONResponse:
 @server.route(API_ENDPOINTS["disable_boot_keyboard"], GET)
 def disable_boot_keyboard(request: Request):
     """This will re-enable serial, USB storage and MIDI and prevent the device from running as a boot keyboard"""
-    return json_resp_get(request, _disable_boot_keyboard)  # TODO: TEST ME
+    return json_resp_get(request, _disable_boot_keyboard)
 
 
 @server.route(API_ENDPOINTS["hard_reset"], GET)
