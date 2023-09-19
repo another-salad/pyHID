@@ -1,0 +1,11 @@
+{
+    "VERSION": "1",
+    "api_endpoints": {
+        "type": "/api/type",
+        "type_keycodes": "/api/keycodes",
+        "mouse_input": "/api/mouse",
+        "disable_boot_keyboard": "/api/disable_boot_kbd",
+        "hard_reset": "/api/hard_reset"
+    },
+    "board": "wiznet5k"
+}
