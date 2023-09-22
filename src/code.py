@@ -57,7 +57,7 @@ def type_into_device(request: Request) -> JSONResponse:
 
 
 @server.route(API_ENDPOINTS["type_keycodes"], POST)
-def type_into_device(request: Request) -> JSONResponse:
+def type_keycodes_into_device(request: Request) -> JSONResponse:
     """
     Types into the connected device via keycodes, maximum of six pressed at one time.
     Layout is NOT required when interacting directly with keycodes.
