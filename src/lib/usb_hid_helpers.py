@@ -54,7 +54,7 @@ def type_chars(request, input_data: dict):
     requested_layout = input_data.get("layout", None)
     all_supported_kbds = tuple(SUPPORTED_KEYBOARDS.keys())
     if requested_layout is None:
-        Keyboard = SUPPORTED_KEYBOARDS["en-US"]
+        _keyboard = SUPPORTED_KEYBOARDS["en-US"]
     elif requested_layout not in all_supported_kbds:
         return JSONResponse(
             request,
@@ -62,23 +62,23 @@ def type_chars(request, input_data: dict):
             status=BAD_REQUEST_400
         )
     else:
-        Keyboard = SUPPORTED_KEYBOARDS[requested_layout]
+        _keyboard = SUPPORTED_KEYBOARDS[requested_layout]
 
-    layout = Keyboard(kbd)
+    layout = _keyboard(kbd)
     wait = input_data.get("wait", None)
     try:
-      if wait:
-          wait = float(wait)
-          for chr in input_data["data"]:
-              layout.write(chr)
-              time.sleep(wait)
-      else:
-          layout.write(input_data["data"])
-    except Exception as exc:
+        if wait:
+            wait = float(wait)
+            for char in input_data["data"]:
+                layout.write(char)
+                time.sleep(wait)
+        else:
+            layout.write(input_data["data"])
+    except Exception as exc:  # pylint: disable=broad-except
         try:
             # Try to release all keys, just in case. Little hideous, but safety first.
             layout.release_all()
-        except:
+        except:  # pylint: disable=bare-except
             pass
         return JSONResponse(request, {"error": repr(exc)}, status=BAD_REQUEST_400)
 
@@ -102,7 +102,7 @@ def json_resp(request, _callable, validator_kwargs: dict) -> JSONResponse:
     """
     try:
         request_json = request.json()
-    except:
+    except:  # pylint: disable=bare-except
         return JSONResponse(request, {"error": "Invalid json data."}, status=BAD_REQUEST_400)
     try:
         bad_input_data = validate_dict(request_json, **validator_kwargs)
@@ -112,7 +112,7 @@ def json_resp(request, _callable, validator_kwargs: dict) -> JSONResponse:
         if isinstance(res, JSONResponse):
             return res
         return JSONResponse(request, {"error": "OK"})
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(request, {"error": repr(exc)}, status=INTERNAL_SERVER_ERROR_500)
 
 
@@ -124,5 +124,5 @@ def json_resp_get(request, _callable) -> JSONResponse:
         if isinstance(res, JSONResponse):
             return res
         return JSONResponse(request, {"error": "OK"})
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         return JSONResponse(request, {"error": repr(exc)}, status=INTERNAL_SERVER_ERROR_500)

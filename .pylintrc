@@ -29,13 +29,18 @@ disable=
     protected-access,
     too-few-public-methods,
     fixme,
-    consider-using-assignment-expr,
     # We are a circuit Python repo, many imports will never resolve in testing
     import-error,
     # All of the Keyboard classes
-    duplicate-code
+    duplicate-code,
+    import-outside-toplevel,
+    inconsistent-return-statements
 
 [REPORTS]
+
+[FORMAT]
+
+max-line-length=120
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html. You can also give a reporter class, eg
