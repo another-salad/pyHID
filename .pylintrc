@@ -1,0 +1,5 @@
+disable=
+    # We are a circuit Python repo, many imports will never resolve in testing
+    import-error,
+    # All of the Keyboard classes
+    duplicate-code
