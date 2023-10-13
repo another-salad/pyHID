@@ -13,9 +13,6 @@ import microcontroller
 
 from adafruit_httpserver import Request, JSONResponse, GET, POST
 
-# Keyboard Layouts
-from supported_keyboards import SUPPORTED_KEYBOARDS  # Will be used in the near future
-
 # circuit-python-utils
 from config_utils import get_config_from_json_file
 
